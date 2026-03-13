@@ -20,25 +20,28 @@
         .vakit-ad { font-weight: bold; margin-bottom: 8px; display: block; color: #7fbbff; font-size: 0.9rem; }
         .circles-row { display: flex; gap: 10px; justify-content: flex-start; }
         .circle { width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; flex-shrink: 0; }
+        
+        /* Renk Tanımları (Isı Haritası İçin Arka Plan Olarak) */
         .s0 { background: rgba(255,255,255,0.05); } 
-        .s1 { background: var(--dark-green); box-shadow: 0 0 8px var(--dark-green); } 
+        .s1 { background: var(--dark-green); } 
         .s2 { background: var(--light-green); } 
         .s3 { background: var(--red); } 
         .s4 { background: var(--orange); }
 
-        /* ULTRA KOMPAKT GENEL GÖRÜNÜM AYARLARI */
-        .monthly-report-table { margin: 0 auto; border-collapse: collapse; font-size: 10px; color: #fff; width: auto !important; }
-        .monthly-report-table th { background: rgba(255,255,255,0.1); padding: 4px 2px; font-size: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        .monthly-report-table td { border: 1px solid rgba(255,255,255,0.03); text-align: center; padding: 2px 0; height: 18px; }
+        /* ULTRA SIKIŞIK ISI HARİTASI (HEATMAP) TASARIMI */
+        .monthly-report-table { margin: 0 auto; border-collapse: collapse; font-size: 10px; color: #fff; width: auto !important; table-layout: fixed; border: none; }
+        .monthly-report-table th { background: rgba(255,255,255,0.05); padding: 1px; font-size: 7px; opacity: 0.5; border: none; text-align: center; }
+        .monthly-report-table td { border: none; text-align: center; padding: 0; margin: 0; }
         
-        /* Sütunları Milimetrik Daraltma */
-        .col-gun { width: 35px; } /* Gün sütunu */
-        .col-vakit { width: 28px; } /* Vakit sütunları arası boşluğu öldürdük */
+        /* Sütunları Piksel Seviyesinde Kilitleme */
+        .col-gun { width: 22px; font-size: 9px; text-align: right !important; padding-right: 3px !important; opacity: 0.6; } /* Gün sütunu */
+        .col-vakit { width: 22px; height: 22px; } /* Vakit kareleri tam kare ve dibdibe */
         
-        .color-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; vertical-align: middle; border: 1px solid rgba(255,255,255,0.2); }
+        /* Karelerin Dibdibe Olması İçin Hücre İçi Ayar */
+        .heatmap-cell { width: 100%; height: 100%; display: block; margin: 0; padding: 0; border: none; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; }
-        .modal-content { background: #082d42; margin: 15px auto; padding: 15px; width: 95%; max-width: 350px; border-radius: 20px; border: 1px solid var(--blue); box-sizing: border-box; }
+        .modal-content { background: #082d42; margin: 10px auto; padding: 10px; width: 98%; max-width: 300px; border-radius: 15px; border: 1px solid var(--blue); box-sizing: border-box; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
         .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); text-align: center; cursor: pointer; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #051a26; padding: 12px; display: flex; gap: 8px; z-index: 1000; }
@@ -50,7 +53,7 @@
 <body>
 
 <div class="container">
-    <div class="main-title">Amel Defterim V.15</div>
+    <div class="main-title">Amel Defterim V.16</div>
     <div class="nav-header">
         <div class="date-nav">
             <button class="nav-btn" onclick="degistirTarih(-1)">❮</button>
@@ -77,8 +80,8 @@
 <div id="statModal" class="modal">
     <div class="modal-content">
         <div id="statTitle"></div>
-        <div id="calGrid" style="overflow-x: auto; text-align:center;"></div>
-        <button class="add-btn" style="width:100%; background:var(--red); margin-top:15px;" onclick="closeModal('statModal')">KAPAT</button>
+        <div id="calGrid" style="text-align:center;"></div>
+        <button class="add-btn" style="width:100%; background:var(--red); margin-top:10px; padding: 8px;" onclick="closeModal('statModal')">KAPAT</button>
     </div>
 </div>
 
@@ -174,17 +177,18 @@
         const grid = document.getElementById('calGrid');
         const yil = istatistikAy.getFullYear();
         const ay = istatistikAy.getMonth();
-        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:10px;"><button class="nav-btn" onclick="window.aylikRaporDegistir(-1)">❮</button><div style="text-align:center; font-size:13px; font-weight:bold;">${istatistikAy.toLocaleDateString('tr',{month:'long', year:'numeric'})}</div><button class="nav-btn" onclick="window.aylikRaporDegistir(1)">❯</button></div>`;
+        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;"><button class="nav-btn" onclick="window.aylikRaporDegistir(-1)">❮</button><div style="text-align:center; font-size:13px; font-weight:bold;">${istatistikAy.toLocaleDateString('tr',{month:'long', year:'numeric'})}</div><button class="nav-btn" onclick="window.aylikRaporDegistir(1)">❯</button></div>`;
 
-        let tableHtml = `<table class="monthly-report-table"><thead><tr><th class="col-gun">GÜN</th><th class="col-vakit">S</th><th class="col-vakit">Ö</th><th class="col-vakit">İ</th><th class="col-vakit">A</th><th class="col-vakit">Y</th></tr></thead><tbody>`;
+        let tableHtml = `<table class="monthly-report-table"><thead><tr><th class="col-gun">G</th><th>S</th><th>Ö</th><th>İ</th><th>A</th><th>Y</th></tr></thead><tbody>`;
         let sonGun = new Date(yil, ay + 1, 0).getDate();
         for (let d = 1; d <= sonGun; d++) {
             let t = new Date(yil, ay, d);
             let veri = JSON.parse(localStorage.getItem(getLocalKey(t)));
-            tableHtml += `<tr onclick="window.goToDay(${d})"><td><b>${d}</b> <small style="opacity:0.4">${gunlerShort[t.getDay() === 0 ? 6 : t.getDay()-1]}</small></td>`;
+            tableHtml += `<tr><td class="col-gun"><b>${d}</b></td>`;
             for (let vIdx = 0; vIdx < 5; vIdx++) {
                 let sClass = "s" + (veri && veri.vakitler[vIdx] ? (veri.vakitler[vIdx].durumlar[0] || 0) : 0);
-                tableHtml += `<td><div class="color-dot ${sClass}"></div></td>`;
+                // Çember yerine tam kare hücre, dibdibe
+                tableHtml += `<td class="col-vakit ${sClass}" onclick="window.goToDay(${d})"></td>`;
             }
             tableHtml += `</tr>`;
         }
