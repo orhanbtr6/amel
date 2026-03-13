@@ -19,12 +19,13 @@
         .circles-row { display: flex; gap: 10px; justify-content: flex-start; }
         .circle { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; }
         .s0 { background: rgba(255,255,255,0.05); } 
-        .s1 { background: var(--dark-green); box-shadow: 0 0 8px var(--dark-green); } 
-        .s2 { background: var(--light-green); } 
+        .s1 { background: var(--dark-green); box-shadow: 0 0 8px var(--dark-green); } /* Münferit */
+        .s2 { background: var(--light-green); } /* Cemaat */
         .s3 { background: var(--red); } 
         .s4 { background: var(--orange); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
         .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .day-label { font-size: 9px; opacity: 0.5; font-weight: bold; padding-bottom: 5px; text-align: center; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; }
         .modal-content { background: #082d42; margin: 15px auto; padding: 15px; width: 92%; max-width: 380px; border-radius: 20px; border: 1px solid var(--blue); box-sizing: border-box; }
         .stats-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
@@ -75,6 +76,7 @@
 <script>
     const vakitler = ["Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
     const basliklar = ["Farz", "Sünnet", "Tesbihat"];
+    const gunler = ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pa"];
     let seciliTarih = new Date();
     let istatistikAy = new Date();
     let gunlukVeriler = {};
@@ -138,7 +140,14 @@
             <button class="nav-btn" onclick="window.ayDegistir(-1,'${ad}','${tip}',${vIdx},${bIdx})">❮</button>
             <div style="text-align:center; font-size:13px;">${ad}<br><small>${istatistikAy.toLocaleDateString('tr',{month:'long',year:'numeric'})}</small></div>
             <button class="nav-btn" onclick="window.ayDegistir(1,'${ad}','${tip}',${vIdx},${bIdx})">❯</button></div>`;
+        
         grid.innerHTML = "";
+        gunler.forEach(g => grid.innerHTML += `<div class="day-label">${g}</div>`);
+
+        let ilkGun = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), 1).getDay();
+        let ofset = (ilkGun === 0) ? 6 : ilkGun - 1;
+        for (let i = 0; i < ofset; i++) grid.innerHTML += `<div></div>`;
+
         let son = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth() + 1, 0).getDate();
         for (let d = 1; d <= son; d++) {
             let t = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), d);
@@ -165,8 +174,11 @@
             let k = getLocalKey(new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), d));
             let veri = JSON.parse(localStorage.getItem(k));
             if(veri) {
-                veri.vakitler.forEach((v, i) => { if(v.durumlar[0] == 1) rapor.v[i].c++; if(v.durumlar[0] == 3) rapor.v[i].k++; });
-                veri.ozeller.forEach(oz => { let rO = rapor.o.find(x => x.ad === oz.ad); if(!rO){ rO={ad:oz.ad, t:0, tip:oz.tip}; rapor.o.push(rO); } if(oz.tip==='sayi') rO.t+=Number(oz.durum||0); else if(oz.durum==1) rO.t++; });
+                veri.vakitler.forEach((v, i) => { 
+                    if(v.durumlar[0] == 2) rapor.v[i].c++; // s2 (Açık Yeşil) artık Cemaat sayılıyor
+                    if(v.durumlar[0] == 3) rapor.v[i].k++; // s3 (Kırmızı) Kaza
+                });
+                veri.ozeller.forEach(oz => { let rO = rapor.o.find(x => x.ad === oz.ad); if(!rO){ rO={ad:oz.ad, t:0, tip:oz.tip}; rapor.o.push(rO); } if(oz.tip==='sayi') rO.t+=Number(oz.durum||0); else if(oz.durum==1 || oz.durum==2) rO.t++; });
             }
         }
         const b = document.getElementById('repB');
@@ -188,10 +200,10 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)],{type:"application/json"})); a.download=`amel_yedek.json`; a.click();
     };
     window.veriyiYukle = (input) => {
-        const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(confirm("Tüm veriler silinip yedek yüklensin mi?")) { Object.keys(localStorage).forEach(k => { if(k.startsWith('amel_')) localStorage.removeItem(k); }); Object.keys(d).forEach(k => localStorage.setItem(k, JSON.stringify(d[k]))); window.location.reload(); } } catch(err) { alert("Geçersiz dosya!"); } }; r.readAsText(input.files[0]);
+        const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(confirm("Yüklensin mi?")) { Object.keys(localStorage).forEach(k => { if(k.startsWith('amel_')) localStorage.removeItem(k); }); Object.keys(d).forEach(k => localStorage.setItem(k, JSON.stringify(d[k]))); window.location.reload(); } } catch(err) { alert("Hata!"); } }; r.readAsText(input.files[0]);
     };
-    window.yeniEkle = () => { const ad = document.getElementById('habInp').value; if(!ad) return; const g = getGlobalOzeller(); g.push({ ad, tip: confirm("Sayısal veri mi tutulsun?") ? 'sayi' : 'renk' }); saveGlobalOzeller(g); document.getElementById('habInp').value = ""; veriYukle(); };
-    window.silSecenekleri = (ad) => { if(confirm("Bu görevi tamamen silmek istediğinize emin misiniz?")) { saveGlobalOzeller(getGlobalOzeller().filter(x => x.ad !== ad)); veriYukle(); } };
+    window.yeniEkle = () => { const ad = document.getElementById('habInp').value; if(!ad) return; const g = getGlobalOzeller(); g.push({ ad, tip: confirm("Sayısal mı?") ? 'sayi' : 'renk' }); saveGlobalOzeller(g); document.getElementById('habInp').value = ""; veriYukle(); };
+    window.silSecenekleri = (ad) => { if(confirm("Silinsin mi?")) { saveGlobalOzeller(getGlobalOzeller().filter(x => x.ad !== ad)); veriYukle(); } };
     window.sayiGuncelle = (i, v) => { gunlukVeriler.ozeller[i].durum = v; render(); };
     veriYukle();
 </script>
