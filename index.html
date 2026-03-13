@@ -19,8 +19,8 @@
         .circles-row { display: flex; gap: 10px; justify-content: flex-start; }
         .circle { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; }
         .s0 { background: rgba(255,255,255,0.05); } 
-        .s1 { background: var(--dark-green); box-shadow: 0 0 8px var(--dark-green); } /* Münferit */
-        .s2 { background: var(--light-green); } /* Cemaat */
+        .s1 { background: var(--dark-green); box-shadow: 0 0 8px var(--dark-green); } 
+        .s2 { background: var(--light-green); } 
         .s3 { background: var(--red); } 
         .s4 { background: var(--orange); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
@@ -47,7 +47,7 @@
             </div>
             <button class="nav-btn" onclick="degistirTarih(1)">❯</button>
         </div>
-        <button class="add-btn" style="background:var(--blue); font-size: 12px;" onclick="showGeneralReport()">📊 GENEL</button>
+        <button class="add-btn" style="background:var(--blue); font-size: 12px;" onclick="showGeneralReport('ay')">📊 GENEL</button>
     </div>
 
     <div style="display: flex; gap: 8px; margin-bottom: 10px;">
@@ -143,11 +143,9 @@
         
         grid.innerHTML = "";
         gunler.forEach(g => grid.innerHTML += `<div class="day-label">${g}</div>`);
-
         let ilkGun = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), 1).getDay();
         let ofset = (ilkGun === 0) ? 6 : ilkGun - 1;
         for (let i = 0; i < ofset; i++) grid.innerHTML += `<div></div>`;
-
         let son = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth() + 1, 0).getDate();
         for (let d = 1; d <= son; d++) {
             let t = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), d);
@@ -163,22 +161,36 @@
         modal.style.display = 'block';
     };
 
-    window.showGeneralReport = () => {
+    window.showGeneralReport = (mod) => {
         const modal = document.getElementById('statModal');
         const grid = document.getElementById('calGrid');
-        document.getElementById('statTitle').innerHTML = `<div style="text-align:center">📊 ${istatistikAy.toLocaleDateString('tr',{month:'long'})} Özeti</div>`;
+        const yil = istatistikAy.getFullYear();
+        
+        let baslik = mod === 'ay' ? `${istatistikAy.toLocaleDateString('tr',{month:'long'})} Özeti` : `${yil} Yılı Özeti`;
+        let butHtml = mod === 'ay' ? `<button class="nav-btn" style="background:var(--orange); font-size:10px;" onclick="showGeneralReport('yil')">Yıllık Gör</button>` : `<button class="nav-btn" style="background:var(--blue); font-size:10px;" onclick="showGeneralReport('ay')">Aylık Gör</button>`;
+
+        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><span>📊 ${baslik}</span> ${butHtml}</div>`;
         grid.innerHTML = `<table class="stats-table"><thead><tr><th>Amel</th><th>Cem.</th><th>Kaza</th><th>Top.</th></tr></thead><tbody id="repB"></tbody></table>`;
-        let son = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth() + 1, 0).getDate();
+        
         let rapor = { v: vakitler.map(v => ({ad: v, c: 0, k: 0})), o: [] };
-        for (let d = 1; d <= son; d++) {
-            let k = getLocalKey(new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), d));
-            let veri = JSON.parse(localStorage.getItem(k));
+        
+        // Veri toplama mantığı
+        let baslangic = mod === 'ay' ? new Date(yil, istatistikAy.getMonth(), 1) : new Date(yil, 0, 1);
+        let bitis = mod === 'ay' ? new Date(yil, istatistikAy.getMonth() + 1, 0) : new Date(yil, 11, 31);
+
+        for (let d = new Date(baslangic); d <= bitis; d.setDate(d.getDate() + 1)) {
+            let veri = JSON.parse(localStorage.getItem(getLocalKey(d)));
             if(veri) {
                 veri.vakitler.forEach((v, i) => { 
-                    if(v.durumlar[0] == 2) rapor.v[i].c++; // s2 (Açık Yeşil) artık Cemaat sayılıyor
-                    if(v.durumlar[0] == 3) rapor.v[i].k++; // s3 (Kırmızı) Kaza
+                    if(v.durumlar[0] == 2) rapor.v[i].c++; 
+                    if(v.durumlar[0] == 3) rapor.v[i].k++; 
                 });
-                veri.ozeller.forEach(oz => { let rO = rapor.o.find(x => x.ad === oz.ad); if(!rO){ rO={ad:oz.ad, t:0, tip:oz.tip}; rapor.o.push(rO); } if(oz.tip==='sayi') rO.t+=Number(oz.durum||0); else if(oz.durum==1 || oz.durum==2) rO.t++; });
+                veri.ozeller.forEach(oz => { 
+                    let rO = rapor.o.find(x => x.ad === oz.ad); 
+                    if(!rO){ rO={ad:oz.ad, t:0, tip:oz.tip}; rapor.o.push(rO); } 
+                    if(oz.tip==='sayi') rO.t += Number(oz.durum||0); 
+                    else if(oz.durum == 1 || oz.durum == 2) rO.t++; 
+                });
             }
         }
         const b = document.getElementById('repB');
