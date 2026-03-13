@@ -131,26 +131,40 @@
         });
     }
 
-    window.veriyiYedekle = () => {
-        let data = {}; Object.keys(localStorage).forEach(k => { if(k.startsWith('amel_')) data[k] = JSON.parse(localStorage.getItem(k)); });
-        const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = `amel_yedek_${new Date().toLocaleDateString('tr-TR')}.json`;
-        a.click();
-    };
-
-    window.veriyiYukle = (input) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
+window.veriyiYukle = (input) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
             const data = JSON.parse(e.target.result);
-            if(confirm("Eski veriler silinsin mi?")) {
-                Object.keys(localStorage).forEach(k => { if(k.startsWith('amel_')) localStorage.removeItem(k); });
-                Object.keys(data).forEach(k => localStorage.setItem(k, JSON.stringify(data[k])));
-                location.reload();
+            
+            // Veri formatı kontrolü (Hatalı dosya yüklenmesini engellemek için)
+            if (!data || typeof data !== 'object') {
+                alert("Hata: Geçersiz yedek dosyası!");
+                return;
             }
-        };
-        reader.readAsText(input.files[0]);
+
+            if(confirm("Mevcut tüm kayıtlarınız silinecek ve yedekteki veriler yüklenecek. Emin misiniz?")) {
+                // 1. Önce mevcut tüm amel kayıtlarını temizle
+                Object.keys(localStorage).forEach(k => { 
+                    if(k.startsWith('amel_')) localStorage.removeItem(k); 
+                });
+
+                // 2. Yeni verileri yaz
+                Object.keys(data).forEach(k => {
+                    localStorage.setItem(k, JSON.stringify(data[k]));
+                });
+
+                // 3. KRİTİK ADIM: Uygulamayı tamamen yenile
+                // Bu sayede JavaScript tüm verileri sıfırdan okur ve tıklamalar aktif olur.
+                alert("Veriler başarıyla yüklendi!");
+                window.location.reload(); 
+            }
+        } catch (err) {
+            alert("Dosya okunurken bir hata oluştu: " + err.message);
+        }
     };
+    reader.readAsText(input.files[0]);
+};
 
     window.silSecenekleri = (ad) => {
         const cevap = prompt(`'${ad}' işlemi seçin:\n1: Sadece bugünden kaldır\n2: TÜM GÜNLERDEN sil\n(Vazgeçmek için boş bırakın)`);
@@ -193,3 +207,4 @@
 </script>
 </body>
 </html>
+
