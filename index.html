@@ -92,7 +92,7 @@
     function veriYukle() {
         const key = getLocalKey(seciliTarih);
         const kaydedilmis = JSON.parse(localStorage.getItem(key));
-        const globalListe = getGlobalOzeller();
+        const globalListe = getGlobalOzeller().filter(g => !g.arsiv);
         if (kaydedilmis) {
             gunlukVeriler = kaydedilmis;
             let guncel = globalListe.map(g => {
@@ -128,7 +128,7 @@
             let safeName = o.ad.replace(/'/g, "\\'");
             let ctrl = o.tip === 'sayi' ? `<input type="number" style="width:55px;" value="${o.durum}" onchange="window.sayiGuncelle(${oIdx}, this.value)">` : `<div class="circle s${o.durum}" onclick="window.degis(${oIdx}, 0, 'ozel_renk')"></div>`;
             oDiv.innerHTML += `<div class="habit-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div onclick="window.showStats('${safeName}', 'ozel', ${oIdx})" style="cursor:pointer"><b>${o.ad}</b><br><small onclick="event.stopPropagation(); window.silSecenekleri('${safeName}')" style="color:var(--red); opacity:0.6;">Kaldır</small></div> ${ctrl}</div>`;
+                <div onclick="window.showStats('${safeName}', 'ozel', ${oIdx})" style="cursor:pointer"><b>${o.ad}</b><br><small onclick="event.stopPropagation(); window.silSecenekleri('${safeName}')" style="color:var(--orange); opacity:0.6;">Kaldır/Arşivle</small></div> ${ctrl}</div>`;
         });
     }
 
@@ -140,7 +140,6 @@
             <button class="nav-btn" onclick="window.ayDegistir(-1,'${ad}','${tip}',${vIdx},${bIdx})">❮</button>
             <div style="text-align:center; font-size:13px;">${ad}<br><small>${istatistikAy.toLocaleDateString('tr',{month:'long',year:'numeric'})}</small></div>
             <button class="nav-btn" onclick="window.ayDegistir(1,'${ad}','${tip}',${vIdx},${bIdx})">❯</button></div>`;
-        
         grid.innerHTML = "";
         gunler.forEach(g => grid.innerHTML += `<div class="day-label">${g}</div>`);
         let ilkGun = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), 1).getDay();
@@ -165,40 +164,48 @@
         const modal = document.getElementById('statModal');
         const grid = document.getElementById('calGrid');
         const yil = istatistikAy.getFullYear();
+        let baslikHtml = "";
         
-        let baslik = mod === 'ay' ? `${istatistikAy.toLocaleDateString('tr',{month:'long'})} Özeti` : `${yil} Yılı Özeti`;
-        let butHtml = mod === 'ay' ? `<button class="nav-btn" style="background:var(--orange); font-size:10px;" onclick="showGeneralReport('yil')">Yıllık Gör</button>` : `<button class="nav-btn" style="background:var(--blue); font-size:10px;" onclick="showGeneralReport('ay')">Aylık Gör</button>`;
+        if (mod === 'ay') {
+            baslikHtml = `<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div style="font-size:14px;">📊 ${istatistikAy.toLocaleDateString('tr',{month:'long'})} Özeti</div>
+                <button class="nav-btn" style="background:var(--orange); font-size:10px;" onclick="showGeneralReport('yil')">Yıllık Gör</button>
+            </div>`;
+        } else {
+            baslikHtml = `<div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:5px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <button class="nav-btn" onclick="window.yilDegistir(-1)">❮</button>
+                    <span style="font-size:16px; font-weight:bold;">📊 ${yil} Yılı</span>
+                    <button class="nav-btn" onclick="window.yilDegistir(1)">❯</button>
+                </div>
+                <button class="nav-btn" style="background:var(--blue); font-size:10px; width:100%;" onclick="showGeneralReport('ay')">Aylık Özet'e Dön</button>
+            </div>`;
+        }
 
-        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><span>📊 ${baslik}</span> ${butHtml}</div>`;
+        document.getElementById('statTitle').innerHTML = baslikHtml;
         grid.innerHTML = `<table class="stats-table"><thead><tr><th>Amel</th><th>Cem.</th><th>Kaza</th><th>Top.</th></tr></thead><tbody id="repB"></tbody></table>`;
-        
         let rapor = { v: vakitler.map(v => ({ad: v, c: 0, k: 0})), o: [] };
-        
-        // Veri toplama mantığı
         let baslangic = mod === 'ay' ? new Date(yil, istatistikAy.getMonth(), 1) : new Date(yil, 0, 1);
         let bitis = mod === 'ay' ? new Date(yil, istatistikAy.getMonth() + 1, 0) : new Date(yil, 11, 31);
 
         for (let d = new Date(baslangic); d <= bitis; d.setDate(d.getDate() + 1)) {
             let veri = JSON.parse(localStorage.getItem(getLocalKey(d)));
             if(veri) {
-                veri.vakitler.forEach((v, i) => { 
-                    if(v.durumlar[0] == 2) rapor.v[i].c++; 
-                    if(v.durumlar[0] == 3) rapor.v[i].k++; 
-                });
+                veri.vakitler.forEach((v, i) => { if(v.durumlar[0] == 2) rapor.v[i].c++; if(v.durumlar[0] == 3) rapor.v[i].k++; });
                 veri.ozeller.forEach(oz => { 
                     let rO = rapor.o.find(x => x.ad === oz.ad); 
                     if(!rO){ rO={ad:oz.ad, t:0, tip:oz.tip}; rapor.o.push(rO); } 
-                    if(oz.tip==='sayi') rO.t += Number(oz.durum||0); 
-                    else if(oz.durum == 1 || oz.durum == 2) rO.t++; 
+                    if(oz.tip==='sayi') rO.t += Number(oz.durum||0); else if(oz.durum == 1 || oz.durum == 2) rO.t++; 
                 });
             }
         }
         const b = document.getElementById('repB');
         rapor.v.forEach(v => b.innerHTML += `<tr><td>${v.ad}</td><td>${v.c}</td><td>${v.k}</td><td>-</td></tr>`);
-        rapor.o.forEach(o => b.innerHTML += `<tr style="color:var(--light-green)"><td>${o.ad}</td><td>-</td><td>-</td><td>${o.t}</td></tr>`);
+        rapor.o.filter(o => o.t > 0).forEach(o => b.innerHTML += `<tr style="color:var(--light-green)"><td>${o.ad}</td><td>-</td><td>-</td><td>${o.t}</td></tr>`);
         modal.style.display = 'block';
     };
 
+    window.yilDegistir = (n) => { istatistikAy.setFullYear(istatistikAy.getFullYear() + n); showGeneralReport('yil'); };
     window.ayDegistir = (n, ad, tip, vIdx, bIdx) => { istatistikAy.setMonth(istatistikAy.getMonth() + n); window.showStats(ad, tip, vIdx, bIdx); };
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; istatistikAy = new Date(); };
     window.degistirTarih = (n) => { seciliTarih.setDate(seciliTarih.getDate() + n); veriYukle(); };
@@ -214,8 +221,20 @@
     window.veriyiYukle = (input) => {
         const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(confirm("Yüklensin mi?")) { Object.keys(localStorage).forEach(k => { if(k.startsWith('amel_')) localStorage.removeItem(k); }); Object.keys(d).forEach(k => localStorage.setItem(k, JSON.stringify(d[k]))); window.location.reload(); } } catch(err) { alert("Hata!"); } }; r.readAsText(input.files[0]);
     };
-    window.yeniEkle = () => { const ad = document.getElementById('habInp').value; if(!ad) return; const g = getGlobalOzeller(); g.push({ ad, tip: confirm("Sayısal mı?") ? 'sayi' : 'renk' }); saveGlobalOzeller(g); document.getElementById('habInp').value = ""; veriYukle(); };
-    window.silSecenekleri = (ad) => { if(confirm("Silinsin mi?")) { saveGlobalOzeller(getGlobalOzeller().filter(x => x.ad !== ad)); veriYukle(); } };
+    window.yeniEkle = () => { const ad = document.getElementById('habInp').value; if(!ad) return; const g = getGlobalOzeller(); g.push({ ad, tip: confirm("Sayısal mı?") ? 'sayi' : 'renk', arsiv: false }); saveGlobalOzeller(g); document.getElementById('habInp').value = ""; veriYukle(); };
+    window.silSecenekleri = (ad) => { 
+        let secim = prompt("'ARŞİV' yazarsanız listeden kalkar ama raporlarda görünür. 'SİL' yazarsanız her yerden tamamen silinir.");
+        if(secim && secim.toUpperCase() === 'ARŞİV') {
+            let g = getGlobalOzeller();
+            let idx = g.findIndex(x => x.ad === ad);
+            if(idx > -1) g[idx].arsiv = true;
+            saveGlobalOzeller(g);
+            veriYukle();
+        } else if(secim && secim.toUpperCase() === 'SİL') {
+            saveGlobalOzeller(getGlobalOzeller().filter(x => x.ad !== ad));
+            veriYukle();
+        }
+    };
     window.sayiGuncelle = (i, v) => { gunlukVeriler.ozeller[i].durum = v; render(); };
     veriYukle();
 </script>
