@@ -28,20 +28,20 @@
         .s3 { background: var(--red); } 
         .s4 { background: var(--orange); }
 
-        /* ULTRA SIKIŞIK ISI HARİTASI (HEATMAP) TASARIMI */
-        .monthly-report-table { margin: 0 auto; border-collapse: collapse; font-size: 10px; color: #fff; width: auto !important; table-layout: fixed; border: none; }
-        .monthly-report-table th { background: rgba(255,255,255,0.05); padding: 1px; font-size: 7px; opacity: 0.5; border: none; text-align: center; }
-        .monthly-report-table td { border: none; text-align: center; padding: 0; margin: 0; }
+        /* ULTRA SIKIŞIK VE DİKEY DARALTILMIŞ ÇETELE TASARIMI */
+        .monthly-report-table { margin: 0 auto; border-collapse: separate; border-spacing: 1px; font-size: 9px; color: #fff; width: auto !important; table-layout: fixed; }
+        .monthly-report-table th { background: rgba(255,255,255,0.03); padding: 1px; font-size: 7px; opacity: 0.4; border: none; text-align: center; }
+        .monthly-report-table td { border: none; text-align: center; padding: 0; margin: 0; cursor: pointer;}
         
         /* Sütunları Piksel Seviyesinde Kilitleme */
-        .col-gun { width: 22px; font-size: 9px; text-align: right !important; padding-right: 3px !important; opacity: 0.6; } /* Gün sütunu */
-        .col-vakit { width: 22px; height: 22px; } /* Vakit kareleri tam kare ve dibdibe */
+        .col-gun { width: 18px; text-align: right !important; padding-right: 3px !important; opacity: 0.5; font-size: 8px;} /* Gün sütunu */
+        .col-vakit { width: 14px; height: 14px; } /* Vakit kareleri tam kare ve sıkışık */
         
-        /* Karelerin Dibdibe Olması İçin Hücre İçi Ayar */
+        /* Karelerin Arasında Boşluk İçin Hücre İçi Ayar */
         .heatmap-cell { width: 100%; height: 100%; display: block; margin: 0; padding: 0; border: none; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; }
-        .modal-content { background: #082d42; margin: 10px auto; padding: 10px; width: 98%; max-width: 300px; border-radius: 15px; border: 1px solid var(--blue); box-sizing: border-box; }
+        .modal-content { background: #082d42; margin: 10px auto; padding: 10px; width: 98%; max-width: 280px; border-radius: 15px; border: 1px solid var(--blue); box-sizing: border-box; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
         .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); text-align: center; cursor: pointer; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #051a26; padding: 12px; display: flex; gap: 8px; z-index: 1000; }
@@ -177,7 +177,7 @@
         const grid = document.getElementById('calGrid');
         const yil = istatistikAy.getFullYear();
         const ay = istatistikAy.getMonth();
-        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;"><button class="nav-btn" onclick="window.aylikRaporDegistir(-1)">❮</button><div style="text-align:center; font-size:13px; font-weight:bold;">${istatistikAy.toLocaleDateString('tr',{month:'long', year:'numeric'})}</div><button class="nav-btn" onclick="window.aylikRaporDegistir(1)">❯</button></div>`;
+        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:8px;"><button class="nav-btn" onclick="window.aylikRaporDegistir(-1)">❮</button><div style="text-align:center; font-size:12px; font-weight:bold;">${istatistikAy.toLocaleDateString('tr',{month:'long', year:'numeric'})}</div><button class="nav-btn" onclick="window.aylikRaporDegistir(1)">❯</button></div>`;
 
         let tableHtml = `<table class="monthly-report-table"><thead><tr><th class="col-gun">G</th><th>S</th><th>Ö</th><th>İ</th><th>A</th><th>Y</th></tr></thead><tbody>`;
         let sonGun = new Date(yil, ay + 1, 0).getDate();
@@ -187,7 +187,7 @@
             tableHtml += `<tr><td class="col-gun"><b>${d}</b></td>`;
             for (let vIdx = 0; vIdx < 5; vIdx++) {
                 let sClass = "s" + (veri && veri.vakitler[vIdx] ? (veri.vakitler[vIdx].durumlar[0] || 0) : 0);
-                // Çember yerine tam kare hücre, dibdibe
+                // Çember yerine tam kare hücre, aralarında 1px boşluk var (border-spacing ile sağlandı)
                 tableHtml += `<td class="col-vakit ${sClass}" onclick="window.goToDay(${d})"></td>`;
             }
             tableHtml += `</tr>`;
