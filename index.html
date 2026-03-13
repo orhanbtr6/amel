@@ -164,15 +164,12 @@
         const modal = document.getElementById('statModal');
         const grid = document.getElementById('calGrid');
         const yil = istatistikAy.getFullYear();
-        let baslikHtml = "";
-        
-        if (mod === 'ay') {
-            baslikHtml = `<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+        let baslikHtml = mod === 'ay' ? 
+            `<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                 <div style="font-size:14px;">📊 ${istatistikAy.toLocaleDateString('tr',{month:'long'})} Özeti</div>
                 <button class="nav-btn" style="background:var(--orange); font-size:10px;" onclick="showGeneralReport('yil')">Yıllık Gör</button>
-            </div>`;
-        } else {
-            baslikHtml = `<div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:5px;">
+            </div>` :
+            `<div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:5px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                     <button class="nav-btn" onclick="window.yilDegistir(-1)">❮</button>
                     <span style="font-size:16px; font-weight:bold;">📊 ${yil} Yılı</span>
@@ -180,10 +177,10 @@
                 </div>
                 <button class="nav-btn" style="background:var(--blue); font-size:10px; width:100%;" onclick="showGeneralReport('ay')">Aylık Özet'e Dön</button>
             </div>`;
-        }
 
         document.getElementById('statTitle').innerHTML = baslikHtml;
         grid.innerHTML = `<table class="stats-table"><thead><tr><th>Amel</th><th>Cem.</th><th>Kaza</th><th>Top.</th></tr></thead><tbody id="repB"></tbody></table>`;
+        
         let rapor = { v: vakitler.map(v => ({ad: v, c: 0, k: 0})), o: [] };
         let baslangic = mod === 'ay' ? new Date(yil, istatistikAy.getMonth(), 1) : new Date(yil, 0, 1);
         let bitis = mod === 'ay' ? new Date(yil, istatistikAy.getMonth() + 1, 0) : new Date(yil, 11, 31);
@@ -191,7 +188,10 @@
         for (let d = new Date(baslangic); d <= bitis; d.setDate(d.getDate() + 1)) {
             let veri = JSON.parse(localStorage.getItem(getLocalKey(d)));
             if(veri) {
+                // Namaz İstatistikleri
                 veri.vakitler.forEach((v, i) => { if(v.durumlar[0] == 2) rapor.v[i].c++; if(v.durumlar[0] == 3) rapor.v[i].k++; });
+                
+                // Özel Amel İstatistikleri (Arşivlenmiş olsa bile verisi varsa topla)
                 veri.ozeller.forEach(oz => { 
                     let rO = rapor.o.find(x => x.ad === oz.ad); 
                     if(!rO){ rO={ad:oz.ad, t:0, tip:oz.tip}; rapor.o.push(rO); } 
@@ -199,8 +199,10 @@
                 });
             }
         }
+        
         const b = document.getElementById('repB');
         rapor.v.forEach(v => b.innerHTML += `<tr><td>${v.ad}</td><td>${v.c}</td><td>${v.k}</td><td>-</td></tr>`);
+        // Toplamı 0'dan büyük olan her şeyi göster (arşivlenmiş ama geçmişte verisi olanlar dahil)
         rapor.o.filter(o => o.t > 0).forEach(o => b.innerHTML += `<tr style="color:var(--light-green)"><td>${o.ad}</td><td>-</td><td>-</td><td>${o.t}</td></tr>`);
         modal.style.display = 'block';
     };
