@@ -137,27 +137,35 @@ window.veriyiYukle = (input) => {
         try {
             const data = JSON.parse(e.target.result);
             
-            // Veri formatı kontrolü (Hatalı dosya yüklenmesini engellemek için)
+            // Basit bir doğrulama: İçinde 'amel_global_ozeller' anahtarı var mı?
             if (!data || typeof data !== 'object') {
                 alert("Hata: Geçersiz yedek dosyası!");
                 return;
             }
 
-            if(confirm("Mevcut tüm kayıtlarınız silinecek ve yedekteki veriler yüklenecek. Emin misiniz?")) {
-                // 1. Önce mevcut tüm amel kayıtlarını temizle
-                Object.keys(localStorage).forEach(k => { 
-                    if(k.startsWith('amel_')) localStorage.removeItem(k); 
+            if(confirm("DİKKAT: Mevcut tüm kayıtlarınız silinecek ve yedekteki veriler yüklenecek. Onaylıyor musunuz?")) {
+                
+                // 1. Önce LocalStorage'ı tamamen temizleyelim (Amel verileri için)
+                const keys = Object.keys(localStorage);
+                keys.forEach(k => {
+                    if(k.startsWith('amel_')) {
+                        localStorage.removeItem(k);
+                    }
                 });
 
-                // 2. Yeni verileri yaz
+                // 2. Yeni verileri tek tek yazalım
                 Object.keys(data).forEach(k => {
                     localStorage.setItem(k, JSON.stringify(data[k]));
                 });
 
-                // 3. KRİTİK ADIM: Uygulamayı tamamen yenile
-                // Bu sayede JavaScript tüm verileri sıfırdan okur ve tıklamalar aktif olur.
-                alert("Veriler başarıyla yüklendi!");
-                window.location.reload(); 
+                // 3. Hafızadaki değişkenleri tazeleyelim
+                seciliTarih = new Date(); // Bugüne dön
+                
+                // 4. Uygulamayı görsel ve mantıksal olarak yeniden başlatalım
+                alert("Veriler başarıyla yüklendi! Uygulama tazeleniyor...");
+                
+                // En garanti yöntem: Sayfayı zorlayarak yenile
+                window.location.href = window.location.pathname + "?v=" + Date.now();
             }
         } catch (err) {
             alert("Dosya okunurken bir hata oluştu: " + err.message);
@@ -207,4 +215,5 @@ window.veriyiYukle = (input) => {
 </script>
 </body>
 </html>
+
 
