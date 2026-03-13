@@ -30,16 +30,19 @@
         .s4 { background: var(--orange); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
         .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); text-align: center; cursor: pointer; }
-        .day-label { font-size: 9px; opacity: 0.5; font-weight: bold; padding-bottom: 5px; text-align: center; }
         
-        /* KOMPAKT TABLO TASARIMI */
+        /* EKSTRA KOMPAKT TABLO TASARIMI */
         .monthly-report-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 5px; color: #fff; table-layout: fixed; }
-        .monthly-report-table th { background: rgba(255,255,255,0.1); padding: 3px 0; position: sticky; top: 0; font-size: 9px; }
-        .monthly-report-table td { border: 1px solid rgba(255,255,255,0.03); text-align: center; padding: 1px 0; height: 18px; }
-        .color-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; vertical-align: middle; }
+        .monthly-report-table th { background: rgba(255,255,255,0.1); padding: 2px 0; font-size: 8px; opacity: 0.7; border: 1px solid rgba(255,255,255,0.05); }
+        .monthly-report-table td { border: 1px solid rgba(255,255,255,0.03); text-align: center; padding: 1px 0; height: 16px; }
+        /* Sütun genişlikleri: G (Gün) biraz geniş, diğerleri dar ve sabit */
+        .monthly-report-table th:nth-child(1), .monthly-report-table td:nth-child(1) { width: 15%; }
+        .monthly-report-table th:not(:first-child), .monthly-report-table td:not(:first-child) { width: 17%; }
+        
+        .color-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; vertical-align: middle; margin: 0; border: 1px solid rgba(255,255,255,0.1); }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; }
-        .modal-content { background: #082d42; margin: 15px auto; padding: 15px; width: 95%; max-width: 450px; border-radius: 20px; border: 1px solid var(--blue); box-sizing: border-box; }
+        .modal-content { background: #082d42; margin: 15px auto; padding: 15px; width: 95%; max-width: 400px; border-radius: 20px; border: 1px solid var(--blue); box-sizing: border-box; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #051a26; padding: 12px; display: flex; gap: 8px; z-index: 1000; }
         input[type="text"] { flex: 1; border-radius: 20px; border: none; padding: 12px; background: rgba(255,255,255,0.1); color: white; outline: none; }
         input[type="number"] { width: 100%; border-radius: 8px; border: none; padding: 5px; background: rgba(255,255,255,0.1); color: white; text-align: center; }
@@ -190,20 +193,20 @@
         const ay = istatistikAy.getMonth();
         
         document.getElementById('statTitle').innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:5px;">
                 <button class="nav-btn" onclick="window.aylikRaporDegistir(-1)">❮</button>
-                <div style="text-align:center; font-size:14px; font-weight:bold;">${istatistikAy.toLocaleDateString('tr',{month:'long', year:'numeric'})}</div>
+                <div style="text-align:center; font-size:12px; font-weight:bold;">${istatistikAy.toLocaleDateString('tr',{month:'long', year:'numeric'})}</div>
                 <button class="nav-btn" onclick="window.aylikRaporDegistir(1)">❯</button>
             </div>`;
 
         let tableHtml = `<table class="monthly-report-table">
-            <thead><tr><th style="width:25px">G</th><th>Sab</th><th>Öğl</th><th>İkin</th><th>Akş</th><th>Yat</th></tr></thead><tbody>`;
+            <thead><tr><th>GÜN</th><th>SAB</th><th>ÖĞL</th><th>İKİN</th><th>AKŞ</th><th>YAT</th></tr></thead><tbody>`;
 
         let sonGun = new Date(yil, ay + 1, 0).getDate();
         for (let d = 1; d <= sonGun; d++) {
             let t = new Date(yil, ay, d);
             let veri = JSON.parse(localStorage.getItem(getLocalKey(t)));
-            let row = `<tr onclick="window.goToDay(${d})"><td><b>${d}</b></td>`;
+            let row = `<tr onclick="window.goToDay(${d})"><td><b>${d}</b> <small style="opacity:0.5">${gunlerShort[t.getDay() === 0 ? 6 : t.getDay()-1]}</small></td>`;
             for (let vIdx = 0; vIdx < 5; vIdx++) {
                 let sClass = "s0";
                 if (veri && veri.vakitler[vIdx]) sClass = "s" + (veri.vakitler[vIdx].durumlar[0] || 0);
@@ -226,12 +229,11 @@
             }
         }
         if(raporO.length > 0) {
-            tableHtml += `<div style="margin-top:10px; font-size:11px; border-top:1px solid #444; padding-top:5px;"><b>Özetler:</b></div>`;
+            tableHtml += `<div style="margin-top:8px; font-size:10px; border-top:1px solid #444; padding-top:4px;"><b>Özet:</b></div>`;
             raporO.filter(o => o.t > 0).forEach(o => {
-                tableHtml += `<div style="display:flex; justify-content:space-between; font-size:10px; padding:2px 0;"><span>${o.ad}</span><b style="color:var(--light-green)">${o.t}</b></div>`;
+                tableHtml += `<div style="display:flex; justify-content:space-between; font-size:9px; padding:1px 0;"><span>${o.ad}</span><b style="color:var(--light-green)">${o.t}</b></div>`;
             });
         }
-
         grid.innerHTML = tableHtml;
         modal.style.display = 'block';
     };
