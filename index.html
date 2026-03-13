@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Amel Defteri V.16.5</title>
+    <title>Amel Defteri V.16.6</title>
     <style>
         :root { --bg: #0b3d59; --card: rgba(255, 255, 255, 0.12); --light-green: #90ee90; --dark-green: #228b22; --red: #e74c3c; --orange: #f39c12; --blue: #3498db; }
         body { background: var(--bg); color: white; font-family: sans-serif; margin: 0; padding: 10px; overflow-x: hidden; }
@@ -31,10 +31,11 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; padding-top: 20px; }
         .modal-content { background: #082d42; margin: 0 auto; padding: 15px; width: 95%; max-width: 320px; border-radius: 15px; border: 1px solid var(--blue); box-sizing: border-box; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
-        .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 10px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; color: #000; font-weight: bold; }
-        .cal-box.s0 { color: #fff; opacity: 0.3; }
-        
-        .yearly-row { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+        .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 9px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); cursor: pointer; position: relative; }
+        .cal-box b { font-size: 11px; color: #000; }
+        .cal-box small { font-size: 7px; opacity: 0.5; position: absolute; top: 2px; left: 2px; color: #fff; }
+
+        .yearly-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
         .footer { position: fixed; bottom: 0; left: 0; right: 0; background: #051a26; padding: 12px; display: flex; gap: 8px; z-index: 1000; }
         input[type="text"] { flex: 1; border-radius: 20px; border: none; padding: 12px; background: rgba(255,255,255,0.1); color: white; outline: none; }
         .add-btn { background: var(--dark-green); color: white; border: none; padding: 10px 15px; border-radius: 20px; font-weight: bold; cursor: pointer; }
@@ -45,11 +46,14 @@
 <body>
 
 <div class="container">
-    <div class="main-title">Amel Defteri V.16.5</div>
+    <div class="main-title">Amel Defteri V.16.6</div>
     <div class="nav-header">
         <div class="date-nav">
             <button class="nav-btn" onclick="degistirTarih(-1)">❮</button>
-            <div id="dispDate" style="font-weight: bold; font-size: 14px;"></div>
+            <div style="text-align:center;">
+                <div id="dispDate" style="font-weight: bold; font-size: 14px;"></div>
+                <div id="isToday" style="font-size: 9px; color: var(--light-green); font-weight:bold;"></div>
+            </div>
             <button class="nav-btn" onclick="degistirTarih(1)">❯</button>
         </div>
         <div style="display:flex; gap:5px;">
@@ -105,6 +109,8 @@
     function render() {
         localStorage.setItem(getLocalKey(seciliTarih), JSON.stringify(gunlukVeriler));
         document.getElementById('dispDate').innerText = seciliTarih.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
+        document.getElementById('isToday').innerText = (getLocalKey(new Date()) === getLocalKey(seciliTarih)) ? "BUGÜN" : "";
+        
         const vDiv = document.getElementById('vakitList');
         vDiv.innerHTML = '';
         gunlukVeriler.vakitler.forEach((v, vIdx) => {
@@ -132,15 +138,18 @@
         for (let d = 1; d <= son; d++) {
             let t = new Date(raporTarih.getFullYear(), raporTarih.getMonth(), d);
             let v = JSON.parse(localStorage.getItem(getLocalKey(t)));
-            let val = "", cls = "s0";
+            let displayVal = "", cls = "s0", dayLabel = `<small>${d}</small>`;
             if (v) {
                 if (tip === 'vakit') cls = "s" + (v.vakitler[vIdx].durumlar[bIdx] || 0);
                 else {
-                    let o = v.ozeller.find(x => x.ad === ad);
-                    if (o) { cls = "s" + (o.durum > 0 ? (o.tip === 'sayi' ? 2 : o.durum) : 0); if(o.tip === 'sayi' && o.durum > 0) val = o.durum; }
+                    let o = (v.ozeller || []).find(x => x.ad === ad);
+                    if (o && o.durum > 0) { 
+                        cls = o.tip === 'sayi' ? 's2' : 's' + o.durum;
+                        if(o.tip === 'sayi') displayVal = `<b>${o.durum}</b>`;
+                    }
                 }
             }
-            gridHtml += `<div class="cal-box ${cls}" onclick="window.gitTarih(${d})">${val || d}</div>`;
+            gridHtml += `<div class="cal-box ${cls}" onclick="window.gitTarih(${d})">${dayLabel}${displayVal}</div>`;
         }
         grid.innerHTML = gridHtml + `</div>`;
         modal.style.display = 'block';
@@ -152,19 +161,18 @@
         const yil = raporTarih.getFullYear();
         document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><button class="nav-btn" onclick="window.yilDegis(-1)">❮</button><b>${yil} YILI ÖZETİ</b><button class="nav-btn" onclick="window.yilDegis(1)">❯</button></div>`;
         
-        let ameller = getGlobalOzeller();
+        let ameller = getGlobalOzeller(); // Tüm ameller (Arşiv dahil olmayanlar)
         let sonuclar = {};
-        ameller.forEach(a => sonuclar[a.ad] = { toplam: 0, gun: 0, tip: a.tip });
-
+        
         for (let m = 0; m < 12; m++) {
             let son = new Date(yil, m + 1, 0).getDate();
             for (let d = 1; d <= son; d++) {
                 let v = JSON.parse(localStorage.getItem(getLocalKey(new Date(yil, m, d))));
                 if (v && v.ozeller) {
                     v.ozeller.forEach(vo => {
-                        if (sonuclar[vo.ad] && vo.durum > 0) {
-                            sonuclar[vo.ad].toplam += (sonuclar[vo.ad].tip === 'sayi' ? parseFloat(vo.durum) : 1);
-                            sonuclar[vo.ad].gun += 1;
+                        if (!sonuclar[vo.ad]) sonuclar[vo.ad] = { toplam: 0, tip: vo.tip };
+                        if (vo.durum > 0) {
+                            sonuclar[vo.ad].toplam += (vo.tip === 'sayi' ? parseFloat(vo.durum) : 1);
                         }
                     });
                 }
@@ -172,9 +180,9 @@
         }
 
         let html = `<div style="max-height:60vh; overflow-y:auto;">`;
-        Object.keys(sonuclar).forEach(ad => {
+        Object.keys(sonuclar).sort().forEach(ad => {
             let res = sonuclar[ad];
-            html += `<div class="yearly-row"><span>${ad}</span><b>${res.toplam} ${res.tip === 'sayi' ? '' : 'Gün'}</b></div>`;
+            html += `<div class="yearly-row"><span>${ad}</span><b>${res.toplam} ${res.tip === 'sayi' ? '' : 'G'}</b></div>`;
         });
         grid.innerHTML = html + `</div>`;
         modal.style.display = 'block';
