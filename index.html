@@ -116,12 +116,16 @@ const vakitler = ["Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
         const vDiv = document.getElementById('vakitList');
         vDiv.innerHTML = '<small style="opacity:0.5; margin-left:5px;">BEŞ VAKİT</small>';
         gunlukVeriler.vakitler.forEach((v, vIdx) => {
-            vDiv.innerHTML += `<div class="habit-card">
-                <span class="vakit-ad" style="cursor:pointer" onclick="window.showStats('${v.ad}', 'vakit', ${vIdx})">${v.ad} 📊</span>
-                <div class="circles-row">
-                    ${basliklar.map((b, bIdx) => `<div style="text-align:center"><div class="circle s${v.durumlar[bIdx]}" onclick="window.degis(${vIdx}, ${bIdx}, '${b.toLowerCase()}')"></div><span style="font-size:9px; opacity:0.7;">${b}</span></div>`).join('')}
-                </div>
-            </div>`;
+            let row = `<div class="habit-card"><span class="vakit-ad">${v.ad}</span><div class="circles-row">`;
+            basliklar.forEach((b, bIdx) => {
+                // Her başlığın (Farz, Sünnet, Tesbihat) altına tıklama özelliği eklendi
+                row += `<div style="text-align:center">
+                            <div class="circle s${v.durumlar[bIdx]}" onclick="window.degis(${vIdx}, ${bIdx}, '${b.toLowerCase()}')"></div>
+                            <span style="font-size:9px; opacity:0.7; cursor:pointer;" onclick="window.showStats('${v.ad} ${b}', 'vakit', ${vIdx}, ${bIdx})">${b} 📊</span>
+                        </div>`;
+            });
+            row += `</div></div>`;
+            vDiv.innerHTML += row;
         });
 
         const oDiv = document.getElementById('ozelList');
@@ -134,15 +138,13 @@ const vakitler = ["Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
         });
     }
 
-    // --- İSTATİSTİK VE TAKVİM FONKSİYONLARI ---
-    window.showStats = (ad, tip, idx) => {
+    window.showStats = (ad, tip, vIdx, bIdx = 0) => {
         const modal = document.getElementById('statModal');
         const grid = document.getElementById('calGrid');
         const title = document.getElementById('statTitle');
         title.innerText = ad + " Takvimi";
         grid.innerHTML = "";
         
-        // Son 28 günü tara
         for (let i = 27; i >= 0; i--) {
             let t = new Date(); t.setDate(t.getDate() - i);
             let k = getLocalKey(t);
@@ -151,11 +153,10 @@ const vakitler = ["Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
 
             if (d) {
                 if (tip === 'vakit') {
-                    // Vakitlerde farzın durumuna göre renk ver (Basit mantık)
-                    renkSinifi = "s" + d.vakitler[idx].durumlar[0];
+                    // Belirli vakit (vIdx) ve belirli başlık (bIdx: Farz/Sünnet/Tesbihat) bilgisini çek
+                    renkSinifi = "s" + (d.vakitler[vIdx].durumlar[bIdx] || 0);
                 } else {
-                    // Özel ibadetlerde direkt durum rengi
-                    renkSinifi = "s" + d.ozeller.find(x => x.ad === ad.replace("\\'", "'"))?.durum || "0";
+                    renkSinifi = "s" + (d.ozeller.find(x => x.ad === ad.replace("\\'", "'"))?.durum || 0);
                 }
             }
             grid.innerHTML += `<div class="cal-box ${renkSinifi}">${t.getDate()}<br><span style="font-size:7px">${t.toLocaleDateString('tr', {month:'short'})}</span></div>`;
@@ -221,6 +222,7 @@ const vakitler = ["Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
 </script>
 </body>
 </html>
+
 
 
 
