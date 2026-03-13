@@ -24,7 +24,7 @@
         .s3 { background: var(--red); } 
         .s4 { background: var(--orange); }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
-        .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); }
+        .cal-box { aspect-ratio: 1; border-radius: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; overflow-y: auto; }
         .modal-content { background: #082d42; margin: 15px auto; padding: 15px; width: 92%; max-width: 380px; border-radius: 20px; border: 1px solid var(--blue); box-sizing: border-box; }
         .stats-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
@@ -95,7 +95,7 @@
             gunlukVeriler = kaydedilmis;
             let guncel = globalListe.map(g => {
                 const eski = gunlukVeriler.ozeller.find(o => o.ad === g.ad);
-                return { ...g, durum: eski ? eski.durum : 0 };
+                return { ...g, durum: eski ? (eski.durum || 0) : 0 };
             });
             gunlukVeriler.ozeller = guncel;
         } else {
@@ -115,7 +115,7 @@
             let row = `<div class="habit-card"><span class="vakit-ad">${v.ad}</span><div class="circles-row">`;
             basliklar.forEach((b, bIdx) => {
                 row += `<div style="text-align:center"><div class="circle s${v.durumlar[bIdx]}" onclick="window.degis(${vIdx}, ${bIdx}, '${b.toLowerCase()}')"></div>
-                <span style="font-size:9px; opacity:0.7;" onclick="window.showStats('${v.ad} ${b}', 'vakit', ${vIdx}, ${bIdx})">${b}</span></div>`;
+                <span style="font-size:9px; opacity:0.7; cursor:pointer;" onclick="window.showStats('${v.ad} ${b}', 'vakit', ${vIdx}, ${bIdx})">${b}</span></div>`;
             });
             vDiv.innerHTML += row + `</div></div>`;
         });
@@ -126,7 +126,7 @@
             let safeName = o.ad.replace(/'/g, "\\'");
             let ctrl = o.tip === 'sayi' ? `<input type="number" style="width:55px;" value="${o.durum}" onchange="window.sayiGuncelle(${oIdx}, this.value)">` : `<div class="circle s${o.durum}" onclick="window.degis(${oIdx}, 0, 'ozel_renk')"></div>`;
             oDiv.innerHTML += `<div class="habit-card" style="display:flex; justify-content:space-between; align-items:center;">
-                <div onclick="window.showStats('${safeName}', 'ozel', ${oIdx})"><b>${o.ad}</b><br><small onclick="event.stopPropagation(); window.silSecenekleri('${safeName}')" style="color:var(--red); opacity:0.6;">Kaldır</small></div> ${ctrl}</div>`;
+                <div onclick="window.showStats('${safeName}', 'ozel', ${oIdx})" style="cursor:pointer"><b>${o.ad}</b><br><small onclick="event.stopPropagation(); window.silSecenekleri('${safeName}')" style="color:var(--red); opacity:0.6;">Kaldır</small></div> ${ctrl}</div>`;
         });
     }
 
@@ -145,9 +145,9 @@
             let veri = JSON.parse(localStorage.getItem(getLocalKey(t)));
             let rs = "s0", icerik = d;
             if (veri) {
-                let durum = (tip === 'vakit') ? veri.vakitler[vIdx].durumlar[bIdx] : (veri.ozeller.find(x => x.ad === ad.replace("\\'", "'"))?.durum || 0);
-                if (tip === 'ozel' && !isNaN(durum) && durum > 0 && icerik == d) icerik = `${d}<br><b style="color:yellow;font-size:8px">${durum}</b>`;
-                rs = "s" + (durum || 0);
+                let d_val = (tip === 'vakit') ? veri.vakitler[vIdx].durumlar[bIdx] : (veri.ozeller.find(x => x.ad === ad.replace("\\'", "'"))?.durum || 0);
+                if (tip === 'ozel' && !isNaN(d_val) && d_val > 0 && icerik == d) icerik = `${d}<br><b style="color:yellow;font-size:8px">${d_val}</b>`;
+                rs = "s" + (d_val || 0);
             }
             grid.innerHTML += `<div class="cal-box ${rs}">${icerik}</div>`;
         }
@@ -162,9 +162,10 @@
         let son = new Date(istatistikAy.getFullYear(), istatistikAy.getMonth() + 1, 0).getDate();
         let rapor = { v: vakitler.map(v => ({ad: v, c: 0, k: 0})), o: [] };
         for (let d = 1; d <= son; d++) {
-            let veri = JSON.parse(localStorage.getItem(getLocalKey(new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), d))));
+            let k = getLocalKey(new Date(istatistikAy.getFullYear(), istatistikAy.getMonth(), d));
+            let veri = JSON.parse(localStorage.getItem(k));
             if(veri) {
-                veri.vakitler.forEach((v, i) => { if(v.durumlar[0] == 1) rapor.v.[i].c++; if(v.durumlar[0] == 3) rapor.v.[i].k++; });
+                veri.vakitler.forEach((v, i) => { if(v.durumlar[0] == 1) rapor.v[i].c++; if(v.durumlar[0] == 3) rapor.v[i].k++; });
                 veri.ozeller.forEach(oz => { let rO = rapor.o.find(x => x.ad === oz.ad); if(!rO){ rO={ad:oz.ad, t:0, tip:oz.tip}; rapor.o.push(rO); } if(oz.tip==='sayi') rO.t+=Number(oz.durum||0); else if(oz.durum==1) rO.t++; });
             }
         }
@@ -178,8 +179,8 @@
     window.closeModal = (id) => { document.getElementById(id).style.display = 'none'; istatistikAy = new Date(); };
     window.degistirTarih = (n) => { seciliTarih.setDate(seciliTarih.getDate() + n); veriYukle(); };
     window.degis = (i, s, tip) => {
-        if (tip === 'ozel_renk') { let d = gunlukVeriler.ozeller[i].durum; gunlukVeriler.ozeller[i].durum = (d === 1) ? 3 : (d === 3) ? 0 : 1; }
-        else { let d = gunlukVeriler.vakitler[i].durumlar[s]; if (tip === 'farz') gunlukVeriler.vakitler[i].durumlar[s] = (d + 1) % 5; else gunlukVeriler.vakitler[i].durumlar[s] = (d === 1) ? 3 : (d === 3) ? 0 : 1; }
+        if (tip === 'ozel_renk') { let d = gunlukVeriler.ozeller[i].durum; gunlukVeriler.ozeller[i].durum = (d == 1) ? 3 : (d == 3) ? 0 : 1; }
+        else { let d = gunlukVeriler.vakitler[i].durumlar[s]; if (tip === 'farz') gunlukVeriler.vakitler[i].durumlar[s] = (d + 1) % 5; else gunlukVeriler.vakitler[i].durumlar[s] = (d == 1) ? 3 : (d == 3) ? 0 : 1; }
         render();
     };
     window.veriyiYedekle = () => {
@@ -187,10 +188,10 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(d)],{type:"application/json"})); a.download=`amel_yedek.json`; a.click();
     };
     window.veriyiYukle = (input) => {
-        const r = new FileReader(); r.onload = (e) => { const d = JSON.parse(e.target.result); if(confirm("Yüklensin mi?")) { Object.keys(localStorage).forEach(k => { if(k.startsWith('amel_')) localStorage.removeItem(k); }); Object.keys(d).forEach(k => localStorage.setItem(k, JSON.stringify(d[k]))); window.location.reload(); } }; r.readAsText(input.files[0]);
+        const r = new FileReader(); r.onload = (e) => { try { const d = JSON.parse(e.target.result); if(confirm("Tüm veriler silinip yedek yüklensin mi?")) { Object.keys(localStorage).forEach(k => { if(k.startsWith('amel_')) localStorage.removeItem(k); }); Object.keys(d).forEach(k => localStorage.setItem(k, JSON.stringify(d[k]))); window.location.reload(); } } catch(err) { alert("Geçersiz dosya!"); } }; r.readAsText(input.files[0]);
     };
-    window.yeniEkle = () => { const ad = document.getElementById('habInp').value; if(!ad) return; const g = getGlobalOzeller(); g.push({ ad, tip: confirm("Sayısal mı?") ? 'sayi' : 'renk' }); saveGlobalOzeller(g); document.getElementById('habInp').value = ""; veriYukle(); };
-    window.silSecenekleri = (ad) => { if(confirm("Silinsin mi?")) { saveGlobalOzeller(getGlobalOzeller().filter(x => x.ad !== ad)); veriYukle(); } };
+    window.yeniEkle = () => { const ad = document.getElementById('habInp').value; if(!ad) return; const g = getGlobalOzeller(); g.push({ ad, tip: confirm("Sayısal veri mi tutulsun?") ? 'sayi' : 'renk' }); saveGlobalOzeller(g); document.getElementById('habInp').value = ""; veriYukle(); };
+    window.silSecenekleri = (ad) => { if(confirm("Bu görevi tamamen silmek istediğinize emin misiniz?")) { saveGlobalOzeller(getGlobalOzeller().filter(x => x.ad !== ad)); veriYukle(); } };
     window.sayiGuncelle = (i, v) => { gunlukVeriler.ozeller[i].durum = v; render(); };
     veriYukle();
 </script>
