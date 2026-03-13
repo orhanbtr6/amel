@@ -5,26 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0b3d59">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Amel Defteri</title>
+    <title>Amel Defteri V.18.2</title>
     
-    <link rel="manifest" href='data:application/json,{"name":"Amel Defteri","short_name":"Amel","start_url":".","display":"standalone","background_color":"#0b3d59","theme_color":"#0b3d59"}'>
+    <link rel="manifest" href="manifest.json">
 
     <script>
-        // Offline çalışma motoru
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const swCode = `
-                    const cacheName = 'amel-v17-8';
-                    self.addEventListener('install', e => {
-                        e.waitUntil(caches.open(cacheName).then(cache => cache.addAll(['./'])));
-                    });
-                    self.addEventListener('fetch', e => {
-                        e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
-                    });
-                `;
-                const blob = new Blob([swCode], {type: 'text/javascript'});
-                navigator.serviceWorker.register(URL.createObjectURL(blob));
+                navigator.serviceWorker.register('sw.js');
             });
         }
     </script>
@@ -70,7 +58,7 @@
 <body>
 
 <div class="container">
-    <div class="main-title">Amel Defteri V.17.8</div>
+    <div class="main-title">Amel Defteri V.18.2</div>
     <div class="nav-header">
         <div class="date-nav">
             <button class="nav-btn" onclick="degistirTarih(-1)">❮</button>
