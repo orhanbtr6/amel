@@ -24,10 +24,12 @@
         .nav-header { display: flex; justify-content: space-between; align-items: center; background: var(--card); padding: 10px; border-radius: 20px; margin-bottom: 10px; }
         .date-nav { display: flex; align-items: center; gap: 8px; }
         .nav-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 14px; }
-        .habit-card { background: var(--card); border-radius: 15px; padding: 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1); }
-        .vakit-ad { font-weight: bold; margin-bottom: 8px; display: block; color: #7fbbff; font-size: 0.9rem; }
-        .circles-row { display: flex; gap: 10px; justify-content: flex-start; }
-        .circle { width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; flex-shrink: 0; }
+        
+        /* Küçük ekranlar için daraltılmış vakit kartı tasarımı */
+        .habit-card { display: flex; justify-content: space-between; align-items: center; background: var(--card); border-radius: 15px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1); }
+        .vakit-ad { font-weight: bold; color: #7fbbff; font-size: 0.85rem; min-width: 55px; }
+        .circles-row { display: flex; gap: 12px; justify-content: flex-end; flex: 1; }
+        .circle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; flex-shrink: 0; }
         
         .s0 { background: rgba(255,255,255,0.05); } 
         .s1 { background: var(--dark-green); } 
@@ -65,7 +67,9 @@
     <div class="nav-header">
         <div class="date-nav">
             <button class="nav-btn" onclick="degistirTarih(-1)">❮</button>
-            <div style="text-align:center;">
+            <!-- Tıklanabilir Gizli Tarih Seçici Alanı -->
+            <div style="text-align:center; position: relative; cursor: pointer; min-width: 70px;">
+                <input type="date" id="datePicker" onchange="window.tarihSec(this.value)" style="position: absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; z-index: 10;">
                 <div id="dispDate" style="font-weight: bold; font-size: 14px;"></div>
                 <div id="isToday" style="font-size: 9px; color: var(--light-green); font-weight:bold;"></div>
             </div>
@@ -132,12 +136,19 @@
         localStorage.setItem(getLocalKey(seciliTarih), JSON.stringify(gunlukVeriler));
         document.getElementById('dispDate').innerText = seciliTarih.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
         document.getElementById('isToday').innerText = (getLocalKey(new Date()) === getLocalKey(seciliTarih)) ? "BUGÜN" : "";
+        
+        // Takvim girdisini secili tarihe göre güncelle
+        const yyyy = seciliTarih.getFullYear();
+        const mm = String(seciliTarih.getMonth() + 1).padStart(2, '0');
+        const dd = String(seciliTarih.getDate()).padStart(2, '0');
+        document.getElementById('datePicker').value = `${yyyy}-${mm}-${dd}`;
+
         const vDiv = document.getElementById('vakitList');
         vDiv.innerHTML = '';
         gunlukVeriler.vakitler.forEach((v, vIdx) => {
             let row = `<div class="habit-card"><span class="vakit-ad">${v.ad}</span><div class="circles-row">`;
             basliklar.forEach((b, bIdx) => {
-                row += `<div style="text-align:center"><div class="circle s${v.durumlar[bIdx]}" onclick="window.degis(${vIdx}, ${bIdx}, 'vakit')"></div>
+                row += `<div style="text-align:center; display:flex; flex-direction:column; align-items:center; gap:2px;"><div class="circle s${v.durumlar[bIdx]}" onclick="window.degis(${vIdx}, ${bIdx}, 'vakit')"></div>
                 <span style="font-size:9px; opacity:0.7; cursor:pointer;" onclick="window.showStats('${v.ad} ${b}', 'vakit', ${vIdx}, ${bIdx})">${b}</span></div>`;
             });
             vDiv.innerHTML += row + `</div></div>`;
@@ -149,6 +160,13 @@
             oDiv.innerHTML += `<div class="ozel-card"><b style="cursor:pointer; font-size:11px;" onclick="window.showStats('${o.ad.replace(/'/g,"\\'")}', 'ozel', ${oIdx}, 0, '${o.id}')">${o.ad}</b>${ctrl}<small onclick="window.silSecenekleri('${o.id}')" style="opacity:0.3; font-size:9px; cursor:pointer;">Arşiv</small></div>`;
         });
     }
+
+    // Takvimden seçilen tarihe gitme fonksiyonu
+    window.tarihSec = (val) => {
+        if (!val) return;
+        seciliTarih = new Date(val);
+        veriYukle();
+    };
 
     // İstatistik Fonksiyonları
     window.showStats = (ad, tip, vIdx, bIdx = 0, id = '') => {
