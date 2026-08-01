@@ -75,7 +75,7 @@
             <button class="nav-btn" onclick="degistirTarih(1)">❯</button>
         </div>
         <div style="display:flex; gap:5px;">
-            <button class="nav-btn" style="background:var(--blue); font-size: 10px;" onclick="showGeneralReport()">📊 GENEL</button>
+            <button class="nav-btn" style="background:var(--blue); font-size: 10px;" onclick="showGeneralReport()">📊 AYLIK</button>
         </div>
     </div>
 
@@ -142,11 +142,11 @@
         
         if (bugunMu) {
             isTodayDiv.innerText = `BUGÜN - ${gunIsmi}`;
-            isTodayDiv.style.color = "var(--light-green)";
         } else {
             isTodayDiv.innerText = gunIsmi;
-            isTodayDiv.style.color = "rgba(255,255,255,0.7)";
         }
+        // Gün isimleri her zaman aynı tonda yeşil renk olacak şekilde güncellendi
+        isTodayDiv.style.color = "var(--light-green)"; 
         
         // Takvim girdisini secili tarihe göre güncelle
         const yyyy = seciliTarih.getFullYear();
@@ -206,7 +206,8 @@
     window.showGeneralReport = () => {
         const modal = document.getElementById('statModal');
         const grid = document.getElementById('calGrid');
-        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><button class="nav-btn" onclick="window.ayRaporuDegis(-1)">❮</button><span>${raporTarih.toLocaleDateString('tr',{month:'long'})}</span><button class="nav-btn" onclick="window.ayRaporuDegis(1)">❯</button></div>`;
+        // Aylık rapor penceresindeki başlığa yıl kısmı eklendi ({month:'long', year:'numeric'})
+        document.getElementById('statTitle').innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><button class="nav-btn" onclick="window.ayRaporuDegis(-1)">❮</button><span>${raporTarih.toLocaleDateString('tr',{month:'long', year:'numeric'})}</span><button class="nav-btn" onclick="window.ayRaporuDegis(1)">❯</button></div>`;
         let th = `<table class="monthly-report-table"><tbody>`;
         let son = new Date(raporTarih.getFullYear(), raporTarih.getMonth() + 1, 0).getDate();
         for (let d = 1; d <= son; d++) {
